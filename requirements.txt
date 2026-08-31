@@ -1,0 +1,15 @@
+
+# Core ML + data packages
+torch>=1.9.0
+torchvision>=0.10.0
+opencv-python>=4.5.3.56
+pycocotools>=2.0.2
+numpy>=1.21
+Pillow>=9.0.0
+tqdm>=4.62
+matplotlib>=3.4
+
+# Optional (used by some scripts)
+scikit-learn>=1.0
+pandas>=1.3
+
