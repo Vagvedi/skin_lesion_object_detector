@@ -1,0 +1,1151 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Skin Lesion Detection — Engineering Journey</title>
+  <style>
+    :root{
+      --sidebar:#071023; --accent:#2ea6ff; --muted:#6b7280; --bg:#f7f9fc; --card:#ffffff;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, 'Courier New', monospace;
+      --line:#dbe4f0; --ink:#071023;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%;margin:0;font-family:Inter, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;background:var(--bg);color:var(--ink)}
+
+    .sidebar{position:fixed;left:0;top:0;bottom:0;width:280px;background:linear-gradient(180deg,var(--sidebar),#07121a);color:white;padding:28px 20px;display:flex;flex-direction:column;overflow:auto}
+    .brand{margin-bottom:10px}
+    .brand .title{font-weight:800;font-size:18px}
+    .brand .sub{font-size:12px;color:rgba(255,255,255,0.78);margin-top:6px}
+    nav.nav{margin-top:18px;display:flex;flex-direction:column;gap:4px}
+    nav.nav a{color:rgba(255,255,255,0.92);text-decoration:none;padding:8px 12px;border-radius:8px;font-weight:700;font-size:13px}
+    nav.nav a.active{background:rgba(255,255,255,0.04);box-shadow:inset 0 1px 0 rgba(255,255,255,0.02)}
+    .sidebar .help{margin-top:auto;color:rgba(255,255,255,0.6);font-size:12px;padding-top:16px}
+
+    .main{margin-left:300px;padding:36px 56px;min-height:100vh}
+    .mast{display:flex;align-items:flex-start;gap:18px;margin-bottom:8px}
+    .mast h1{margin:0;font-size:26px}
+    .mast p{margin:6px 0 0 0;color:var(--muted)}
+
+    .story{position:relative;margin-top:28px}
+    .story-line{position:absolute;left:92px;top:0;bottom:0;width:4px;background:linear-gradient(180deg,var(--accent),transparent);border-radius:4px}
+    .chapter{position:relative;padding:24px 28px 24px 140px;margin-bottom:28px;background:linear-gradient(180deg,#ffffff,#fbfdff);border-radius:8px;box-shadow:0 6px 20px rgba(11,17,29,0.04)}
+    .chapter:before{content:attr(data-phase);position:absolute;left:24px;top:20px;width:96px;height:96px;border-radius:12px;background:var(--card);display:flex;align-items:center;justify-content:center;font-weight:900;color:var(--accent);font-size:13px;box-shadow:0 8px 30px rgba(11,17,29,0.06);text-align:center;padding:8px}
+    .chapter h2{margin:0 0 6px 0;font-size:20px}
+    .chapter h3{margin:18px 0 10px 0;color:var(--muted);font-weight:700;font-size:14px;letter-spacing:.02em;text-transform:uppercase}
+    .chapter h3:first-of-type{margin-top:8px}
+    .meta{color:var(--muted);font-size:14px;margin-bottom:12px;line-height:1.55}
+    .body{font-size:15px;line-height:1.6;margin:0 0 12px 0}
+    .placeholder{min-height:160px;border-radius:8px;border:2px dashed #e6eefb;background:linear-gradient(180deg,#ffffff,#fbfdff);display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--muted);padding:20px;text-align:center}
+    .placeholder strong{color:var(--ink);margin-bottom:6px}
+
+    .issue{border-left:4px solid #ff8a65;background:#fff8f6;padding:12px 14px;border-radius:6px;margin:10px 0}
+    .fix{border-left:4px solid #34d399;background:#f6fffa;padding:12px 14px;border-radius:6px;margin:10px 0}
+
+    pre.code{background:#07121a;color:#e6f4ff;padding:14px 16px;border-radius:6px;overflow:auto;font-family:var(--mono);font-size:13px;line-height:1.55;margin:10px 0 16px}
+
+    .spec{width:100%;border-collapse:collapse;font-size:14px;margin:8px 0 16px}
+    .spec th,.spec td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+    .spec th{width:160px;color:var(--muted);font-weight:700;font-size:12px;text-transform:uppercase;letter-spacing:.04em}
+    .spec code{font-family:var(--mono);font-size:12px}
+
+    .stack{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0 16px}
+    .stack span{font-family:var(--mono);font-size:12px;padding:6px 10px;border:1px solid var(--line);border-radius:999px;background:#fff;color:#0f172a}
+
+    .vflow{display:flex;flex-direction:column;align-items:stretch;max-width:560px;margin:8px 0 18px}
+    .vflow-step{background:#fff;border:1px solid var(--line);border-radius:8px;padding:12px 14px;display:grid;grid-template-columns:36px 1fr;gap:10px;align-items:start}
+    .vflow-ico{width:36px;height:36px;border-radius:8px;background:#07121a;color:#e6f4ff;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:800}
+    .vflow-step .kicker{font-family:var(--mono);font-size:11px;color:var(--accent);font-weight:700;letter-spacing:.04em}
+    .vflow-step .ttl{font-weight:800;font-size:14px;margin:2px 0 4px}
+    .vflow-step p{margin:0;color:#334155;font-size:13px;line-height:1.45}
+    .vflow-step .why{margin-top:6px;color:var(--muted);font-size:12px}
+    .vflow-arrow{text-align:center;color:var(--accent);font-size:18px;line-height:1.6;font-weight:700}
+
+    .compare{display:grid;grid-template-columns:1fr 40px 1fr;gap:8px;align-items:stretch;margin:12px 0 18px;max-width:720px}
+    .compare-box{border:1px solid var(--line);border-radius:8px;padding:14px;background:#fff}
+    .compare-box h4{margin:0 0 8px;font-size:13px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted)}
+    .compare-mid{display:flex;align-items:center;justify-content:center;color:var(--accent);font-size:22px;font-weight:800}
+
+    .tree{font-family:var(--mono);font-size:13px;line-height:1.45}
+    .folder-note{margin:4px 0 10px;font-size:13px;color:#334155}
+    .folder-note strong{font-family:var(--mono);font-size:12px}
+
+    .beforeafter{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:12px 0 16px}
+    .beforeafter .issue,.beforeafter .fix{margin:0}
+
+    .table-wrap{width:100%;overflow-x:auto;margin:8px 0 16px;border:1px solid var(--line);border-radius:8px;background:#fff}
+    table.results{width:100%;border-collapse:collapse;font-size:14px;min-width:520px}
+    table.results thead th{text-align:left;padding:10px 12px;background:#07121a;color:#e6f4ff;font-size:12px;letter-spacing:.04em;text-transform:uppercase;font-weight:700;border-bottom:1px solid #0b1a28;white-space:nowrap}
+    table.results thead th.num{text-align:right}
+    table.results tbody td{padding:9px 12px;border-bottom:1px solid var(--line);vertical-align:middle}
+    table.results tbody tr:last-child td{border-bottom:0}
+    table.results tbody tr:nth-child(even){background:#f8fbff}
+    table.results .num{font-family:var(--mono);font-size:13px;text-align:right;white-space:nowrap}
+    table.results td.cls{font-weight:600}
+    table.results .recall{font-family:var(--mono);font-size:13px;font-weight:700;text-align:right;white-space:nowrap;border-left:1px solid var(--line)}
+    table.results .recall-high{background:#ecfdf5;color:#047857}
+    table.results .recall-mid{background:#fffbeb;color:#b45309}
+    table.results .recall-low{background:#fef2f2;color:#b91c1c}
+    .eval-note{font-size:13px;color:var(--muted);line-height:1.55;margin:0 0 8px;padding:10px 12px;border:1px solid var(--line);border-radius:6px;background:#fff}
+
+    .screenshot-card{border:1px solid var(--line);border-radius:8px;padding:12px;background:#fff;margin:16px 0;text-align:center}
+    .screenshot-card img{max-width:100%;height:auto;border-radius:4px;display:block;margin:0 auto;cursor:pointer;transition:transform 0.2s}
+    .screenshot-card img:hover{transform:scale(1.02)}
+    .screenshot-card .caption{font-size:13px;color:var(--muted);margin-top:8px;line-height:1.4}
+
+    @media (max-width:980px){
+      .compare,.beforeafter{grid-template-columns:1fr}
+      .compare-mid{transform:rotate(90deg);height:28px}
+    }
+    @media (max-width:900px){
+      .sidebar{position:relative;width:100%;height:auto;padding:16px}
+      .main{margin:0;padding:18px}
+      .chapter{padding:88px 18px 18px}
+      .chapter:before{left:18px;top:16px;width:auto;height:auto;padding:8px 12px}
+      .story-line{display:none}
+    }
+  </style>
+  <script>
+    function goTo(id){
+      const el=document.getElementById(id); if(!el) return; el.scrollIntoView({behavior:'smooth',block:'start'});
+      history.replaceState(null,'', '#'+id);
+    }
+    function updateActive(){
+      const chapters = document.querySelectorAll('.chapter');
+      let active = chapters[0] && chapters[0].id;
+      for(const c of chapters){
+        const r = c.getBoundingClientRect(); if(r.top < window.innerHeight*0.3) active = c.id;
+      }
+      document.querySelectorAll('nav.nav a').forEach(a=> a.classList.toggle('active', a.getAttribute('href')==('#'+active)));
+    }
+    function openImageViewer(src){
+      const viewer = document.createElement('div');
+      viewer.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.9);z-index:9999;display:flex;align-items:center;justify-content:center;cursor:pointer';
+      viewer.onclick = function(){ document.body.removeChild(viewer); };
+      const img = document.createElement('img');
+      img.src = src;
+      img.style.cssText = 'max-width:90%;max-height:90%;object-fit:contain';
+      viewer.appendChild(img);
+      document.body.appendChild(viewer);
+    }
+    document.addEventListener('scroll', updateActive);
+    document.addEventListener('DOMContentLoaded', ()=>{ updateActive(); if(location.hash) setTimeout(()=>goTo(location.hash.slice(1)),60) });
+  </script>
+</head>
+<body>
+
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="title">Skin Lesion Detection</div>
+      <div class="sub">Project Documentation</div>
+    </div>
+    <nav class="nav">
+      <a href="#intro" onclick="event.preventDefault();goTo('intro')">01 Problem Statement</a>
+      <a href="#objective" onclick="event.preventDefault();goTo('objective')">02 Project Objective</a>
+      <a href="#dataset" onclick="event.preventDefault();goTo('dataset')">03 Dataset & Classes</a>
+      <a href="#pipeline" onclick="event.preventDefault();goTo('pipeline')">04 Data Processing</a>
+      <a href="#challenges" onclick="event.preventDefault();goTo('challenges')">05 Engineering Challenges</a>
+      <a href="#model" onclick="event.preventDefault();goTo('model')">06 Why Faster R-CNN</a>
+      <a href="#architecture" onclick="event.preventDefault();goTo('architecture')">07 Model Architecture</a>
+      <a href="#training" onclick="event.preventDefault();goTo('training')">08 Training</a>
+      <a href="#evaluation" onclick="event.preventDefault();goTo('evaluation')">09 Evaluation</a>
+      <a href="#prediction" onclick="event.preventDefault();goTo('prediction')">10 Prediction</a>
+      <a href="#future" onclick="event.preventDefault();goTo('future')">11 Future Work</a>
+      <a href="#conclusion" onclick="event.preventDefault();goTo('conclusion')">12 Conclusion</a>
+    </nav>
+    <div class="help">Project Documentation<br><small style="color:rgba(255,255,255,0.75)">End-to-end skin lesion detection pipeline</small></div>
+  </aside>
+
+  <main class="main">
+    <div class="mast">
+      <div>
+        <h1>Skin Lesion Object Detection — Project Documentation</h1>
+        <p class="meta">End-to-end pipeline: dataset processing, Faster R-CNN training, evaluation, and prediction for 10-class skin lesion detection.</p>
+      </div>
+    </div>
+
+    <section class="story">
+      <div class="story-line" aria-hidden="true"></div>
+
+      <article id="intro" class="chapter" data-phase="PROBLEM">
+        <h2>Problem Statement</h2>
+        <h3>The clinical need for lesion localization</h3>
+        <p class="meta">Manual review of dermoscopic images requires specialist time and is difficult to scale. While classification models can label an entire image, they cannot identify <em>where</em> the lesion is located — a critical requirement for clinical triage and diagnosis.</p>
+
+        <p class="body">This project addresses the need for a system that provides both lesion localization and disease classification. A pure image classifier emits a single global label with no spatial information, which is insufficient for clinical applications where clinicians need to see exactly which region the model is analyzing.</p>
+
+        <div class="issue" style="margin:12px 0">
+          <strong>Classification limitation:</strong> Cannot answer <em>where</em> the lesion is. No bounding box to inspect, overlay, or evaluate with localization metrics.
+        </div>
+
+        <h3>System requirement</h3>
+        <p class="body">The project requires <strong>object detection</strong> — a system that outputs both bounding box coordinates and a disease class label for each detected lesion.</p>
+
+        <pre class="code">Input Skin Image
+        ↓
+Lesion Localization  (bounding box coordinates)
+        ↓
+Disease Classification  (one of 10 classes)
+        ↓
+Prediction Output: { box, class, score }</pre>
+      </article>
+
+      <article id="objective" class="chapter" data-phase="OBJECTIVE">
+        <h2>Project Objective</h2>
+        <h3>Build an end-to-end 10-class skin lesion detection system</h3>
+        <p class="meta">The goal is to create a prototype system that can detect and classify skin lesions from dermoscopic images across 10 disease categories using Faster R-CNN with ResNet50 FPN backbone.</p>
+
+        <p class="body">This system is designed as a research/prototype project to demonstrate the feasibility of multi-class skin lesion detection. It is not clinically validated or production-ready, but provides a foundation for further development and validation.</p>
+
+        <h3>Key objectives</h3>
+        <ul>
+          <li>Detect and localize skin lesions with bounding boxes</li>
+          <li>Classify lesions into 10 disease categories</li>
+          <li>Build a complete data processing pipeline from raw datasets to training-ready format</li>
+          <li>Train and evaluate a Faster R-CNN model</li>
+          <li>Demonstrate prediction on unseen images</li>
+        </ul>
+
+        <h3>Technology Stack</h3>
+        <div class="stack" aria-label="Technology stack">
+          <span>Python</span>
+          <span>PyTorch</span>
+          <span>Torchvision</span>
+          <span>Faster R-CNN</span>
+          <span>ResNet50 FPN</span>
+          <span>CVAT</span>
+          <span>COCO Evaluation</span>
+        </div>
+      </article>
+
+      <article id="dataset" class="chapter" data-phase="DATASET">
+        <h2>Dataset and Classes</h2>
+        <h3>Evolution from 2-class to 10-class taxonomy</h3>
+        <p class="meta">The project evolved from an initial two-class setup to the final 10-class taxonomy. This progression was part of the incremental development approach, where the detection pipeline was first established with a simpler problem before expanding to the full multi-class system.</p>
+
+        <h3>Initial two-class setup</h3>
+        <p class="body">The project initially started with only two classes to establish the first working detection pipeline:</p>
+        <ul>
+          <li><strong>Benign</strong> — non-cancerous skin lesions</li>
+          <li><strong>Malignant</strong> — cancerous or potentially cancerous lesions</li>
+        </ul>
+
+        <p class="body">This initial setup allowed for rapid prototyping and validation of the core detection pipeline before expanding to the more complex 10-class problem.</p>
+
+        <div class="placeholder" style="margin-top:16px">
+          <strong>Initial Two-Class Dataset Screenshot</strong>
+          <p>Initial dataset preparation for benign vs malignant classification</p>
+        </div>
+
+        <h3>Final 10-class taxonomy</h3>
+        <p class="meta">After validating the initial pipeline, the project was expanded to include 10 disease categories. The project uses publicly available Kaggle skin-lesion datasets, consolidated into a unified taxonomy. Each class represents a specific skin disease or lesion type.</p>
+
+        <h3>10-class taxonomy</h3>
+        <p class="meta">Internal code maps each name to an integer id (0–9):</p>
+        <pre class="code">ID_TO_NAME = {
+    0: "benign",              1: "malignant",
+    2: "ak",                  3: "bcc",
+    4: "dermatofibroma",      5: "melanoma",
+    6: "nevus",               7: "pigmented_bk",
+    8: "scc",                 9: "vascular"
+}</pre>
+
+        <h3>Class descriptions</h3>
+        <table class="spec">
+          <tr>
+            <th>benign</th>
+            <td>Benign skin lesions — non-cancerous growths</td>
+          </tr>
+          <tr>
+            <th>malignant</th>
+            <td>Malignant lesions — cancerous or potentially cancerous</td>
+          </tr>
+          <tr>
+            <th>ak</th>
+            <td>Actinic Keratosis — precancerous skin patches</td>
+          </tr>
+          <tr>
+            <th>bcc</th>
+            <td>Basal Cell Carcinoma — common type of skin cancer</td>
+          </tr>
+          <tr>
+            <th>dermatofibroma</th>
+            <td>Dermatofibroma — benign skin nodules</td>
+          </tr>
+          <tr>
+            <th>melanoma</th>
+            <td>Melanoma — serious form of skin cancer</td>
+          </tr>
+          <tr>
+            <th>nevus</th>
+            <td>Nevus — common moles, typically benign</td>
+          </tr>
+          <tr>
+            <th>pigmented_bk</th>
+            <td>Pigmented Benign Keratosis — benign pigmented lesions</td>
+          </tr>
+          <tr>
+            <th>scc</th>
+            <td>Squamous Cell Carcinoma — another common skin cancer type</td>
+          </tr>
+          <tr>
+            <th>vascular</th>
+            <td>Vascular Lesions — blood vessel-related skin conditions</td>
+          </tr>
+        </table>
+
+        <h3>Data sources</h3>
+        <p class="body">The dataset was constructed from multiple public sources, each with different folder structures, class IDs, and annotation formats. This required careful merging and remapping to create a unified training set.</p>
+      </article>
+
+      <article id="pipeline" class="chapter" data-phase="PIPELINE">
+        <h2>Data Processing Pipeline</h2>
+        <h3>Converting heterogeneous datasets into a unified training set</h3>
+        <p class="meta">The data pipeline transforms multiple public sources with different structures, class IDs, and annotation formats into a single clean Faster R-CNN training dataset. This is the backbone of the project.</p>
+
+        <div class="vflow" aria-label="Data processing workflow">
+          <div class="vflow-step">
+            <div class="vflow-ico" aria-hidden="true">📁</div>
+            <div>
+              <div class="kicker">01 · ingest</div>
+              <div class="ttl">Raw Dataset Collection</div>
+              <p>Multiple public skin-lesion archives from Kaggle, each with its own naming and split conventions. Kept immutable as the source of truth.</p>
+              <div class="why">Challenges: different folder structures, class numbering, and formats (YOLO, COCO, custom).</div>
+            </div>
+          </div>
+          <div class="vflow-arrow">↓</div>
+          <div class="vflow-step">
+            <div class="vflow-ico" aria-hidden="true">🏷</div>
+            <div>
+              <div class="kicker">02 · annotate</div>
+              <div class="ttl">CVAT Annotation → YOLO Export</div>
+              <p><strong>CVAT</strong> was used to draw bounding boxes and assign disease labels. Exports written as one YOLO <code>.txt</code> per image.</p>
+              <pre class="code" style="margin:8px 0 4px"># YOLO label line format (normalized 0–1)
+class_id  x_center  y_center  width  height
+# Example: melanoma (id=5) box
+5  0.60  0.55  0.30  0.25</pre>
+              <div class="why">Quality note: annotation quality directly affects detection performance.</div>
+            </div>
+          </div>
+          <div class="vflow-arrow">↓</div>
+          <div class="vflow-step">
+            <div class="vflow-ico" aria-hidden="true">🗂</div>
+            <div>
+              <div class="kicker">03 · layout</div>
+              <div class="ttl">Dataset Organization</div>
+              <p>Images and labels placed into a consistent directory scheme before any merge.</p>
+              <div class="why">Purpose: give later scripts a predictable path to every sample.</div>
+            </div>
+          </div>
+          <div class="vflow-arrow">↓</div>
+          <div class="vflow-step">
+            <div class="vflow-ico" aria-hidden="true">☑</div>
+            <div>
+              <div class="kicker">04 · quality</div>
+              <div class="ttl">Annotation Verification</div>
+              <p>Checked every image has a matching label file and that boxes are readable.</p>
+              <div class="why">Purpose: fail early on missing annotations instead of silently during training.</div>
+            </div>
+          </div>
+          <div class="vflow-arrow">↓</div>
+          <div class="vflow-step">
+            <div class="vflow-ico" aria-hidden="true">#</div>
+            <div>
+              <div class="kicker">05 · taxonomy</div>
+              <div class="ttl">Class ID Remapping</div>
+              <p>Source-specific class numbers rewritten onto the shared 10-class id space.</p>
+              <div class="why">Purpose: prevent two diseases sharing an id, or one disease splitting across ids.</div>
+            </div>
+          </div>
+          <div class="vflow-arrow">↓</div>
+          <div class="vflow-step">
+            <div class="vflow-ico" aria-hidden="true">＋</div>
+            <div>
+              <div class="kicker">06 · union</div>
+              <div class="ttl">Dataset Merge + Duplicate Handling</div>
+              <p>Sources combined; colliding filenames prefixed by source to prevent silent sample loss.</p>
+              <div class="why">Purpose: one training corpus instead of several incompatible loaders.</div>
+            </div>
+          </div>
+          <div class="vflow-arrow">↓</div>
+          <div class="vflow-step">
+            <div class="vflow-ico" aria-hidden="true">C</div>
+            <div>
+              <div class="kicker">07 · format</div>
+              <div class="ttl">YOLO → COCO Conversion</div>
+              <p>Normalized YOLO boxes converted to absolute COCO <code>xywh</code> + category lists.</p>
+              <div class="why">Purpose: torchvision Faster R-CNN and pycocotools both expect COCO JSON.</div>
+            </div>
+          </div>
+          <div class="vflow-arrow">↓</div>
+          <div class="vflow-step">
+            <div class="vflow-ico" aria-hidden="true">▶</div>
+            <div>
+              <div class="kicker">08 · train</div>
+              <div class="ttl">Faster R-CNN Training Dataset</div>
+              <p>Processed images + <code>train.json</code> / <code>val.json</code> / <code>test.json</code> — ready for the detector loader.</p>
+              <div class="why">Purpose: reproducible input to training pipeline.</div>
+            </div>
+          </div>
+        </div>
+
+        <h3>Data preprocessing steps</h3>
+        <p class="meta">Before training, the raw dataset went through multiple preprocessing and quality checks to ensure only clean, well-annotated samples reached the model.</p>
+
+        <h3>1 · Duplicate Image Removal</h3>
+        <p class="body">Duplicate images were identified and removed using hash comparison to avoid repeated samples affecting model learning.</p>
+
+        <h3>2 · Blur and Quality Check</h3>
+        <p class="body">Low-quality and blurred images were detected using Laplacian variance and removed because unclear lesion details can affect detection performance.</p>
+
+        <h3>3 · Image-Label Verification</h3>
+        <p class="body">Every image was verified to have a corresponding annotation file to prevent silent data loss during training.</p>
+
+        <h3>4 · Annotation Validation</h3>
+        <p class="body">Annotation files were checked to ensure they followed the correct YOLO format and contained valid bounding box values.</p>
+
+        <h3>5 · Dataset Distribution Check</h3>
+        <p class="body">Class distribution was verified after preprocessing to ensure all 10 disease categories were correctly included before training.</p>
+
+        <h3>Preprocessing workflow</h3>
+        <pre class="code">Raw Dataset
+      ↓
+Duplicate Removal
+      ↓
+Blur &amp; Quality Check
+      ↓
+Image-Label Verification
+      ↓
+Annotation Validation
+      ↓
+Final Clean Dataset</pre>
+      </article>
+
+      <article id="challenges" class="chapter" data-phase="CHALLENGES">
+        <h2>Engineering Challenges & Debugging Journey</h2>
+        <h3>The iterative development process</h3>
+        <p class="meta">The project was not built in a single linear pass. Instead, it progressed through multiple stages of development, validation, debugging, and refinement. This section documents the key engineering challenges encountered and how they were resolved.</p>
+
+        <h3>Project evolution timeline</h3>
+        <div class="vflow" aria-label="Engineering journey timeline">
+          <div class="vflow-step">
+            <div class="vflow-ico" aria-hidden="true">1</div>
+            <div>
+              <div class="kicker">PHASE 1</div>
+              <div class="ttl">Initial 2-Class Setup</div>
+              <p>Project began with benign vs malignant classification only. Dataset prepared and initial Faster R-CNN model trained.</p>
+            </div>
+          </div>
+          <div class="vflow-arrow">↓</div>
+          <div class="vflow-step">
+            <div class="vflow-ico" aria-hidden="true">2</div>
+            <div>
+              <div class="kicker">PHASE 2</div>
+              <div class="ttl">First Major Bug: Bounding Box Issue</div>
+              <p>Evaluation revealed that predicted bounding boxes were appearing in approximately the same position across different images, indicating a pipeline problem.</p>
+            </div>
+          </div>
+          <div class="vflow-arrow">↓</div>
+          <div class="vflow-step">
+            <div class="vflow-ico" aria-hidden="true">3</div>
+            <div>
+              <div class="kicker">RESOLUTION</div>
+              <div class="ttl">Debugged & Corrected Localization</div>
+              <p>Traced issue through data/annotation/prediction pipeline, identified root cause, corrected the problem, and reran evaluation.</p>
+            </div>
+          </div>
+          <div class="vflow-arrow">↓</div>
+          <div class="vflow-step">
+            <div class="vflow-ico" aria-hidden="true">4</div>
+            <div>
+              <div class="kicker">PHASE 3</div>
+              <div class="ttl">Expanded to 10 Classes</div>
+              <p>After validating the basic pipeline, project expanded from 2 classes to 10 classes with additional disease categories.</p>
+            </div>
+          </div>
+          <div class="vflow-arrow">↓</div>
+          <div class="vflow-step">
+            <div class="vflow-ico" aria-hidden="true">5</div>
+            <div>
+              <div class="kicker">PHASE 4</div>
+              <div class="ttl">Second Major Bug: Missing Pigmented BK</div>
+              <p>Dataset validation revealed Pigmented BK showed 0 samples in processed dataset despite raw images being present.</p>
+            </div>
+          </div>
+          <div class="vflow-arrow">↓</div>
+          <div class="vflow-step">
+            <div class="vflow-ico" aria-hidden="true">6</div>
+            <div>
+              <div class="kicker">RESOLUTION</div>
+              <div class="ttl">Debugged Dataset Merge Process</div>
+              <p>Fixed image-label mapping and merging process, regenerated dataset, and verified Pigmented BK correctly included.</p>
+            </div>
+          </div>
+          <div class="vflow-arrow">↓</div>
+          <div class="vflow-step">
+            <div class="vflow-ico" aria-hidden="true">7</div>
+            <div>
+              <div class="kicker">FINAL</div>
+              <div class="ttl">Final Training & Evaluation</div>
+              <p>Trained final 10-class model and achieved the reported evaluation metrics.</p>
+            </div>
+          </div>
+        </div>
+
+        <h3>Challenge 1 — Incorrect / Repeated Bounding Box Localization</h3>
+        <h3>The problem</h3>
+        <p class="meta">During evaluation of the initial two-class model (benign vs malignant), a serious localization issue was discovered through visual inspection of predictions.</p>
+
+        <div class="issue">
+          <strong>Issue detected:</strong> Predicted bounding boxes were appearing in approximately the same position across different images, rather than adapting to the actual lesion locations in each image.
+        </div>
+
+        <p class="body">This was a critical finding because it indicated that the issue was not simply a matter of model accuracy — the localization/prediction pipeline itself had a fundamental problem that needed investigation.</p>
+
+        <h3>Investigation and resolution</h3>
+        <p class="meta">A systematic investigation covered dataset folders, image–label pairs, class mappings, and the merge scripts:</p>
+        <ol>
+          <li>Confirmed raw Pigmented BK images were on disk.</li>
+          <li>Confirmed matching YOLO label files existed.</li>
+          <li>Compared image stems to label stems for naming mismatches.</li>
+          <li>Traced merge logs for skipped “missing label” paths.</li>
+          <li>Walked class-id remapping to rule out silent remapping to another class</li>
+          <li>Examined the image-label path mapping logic in the merge script</li>
+        </ol>
+        <pre class="code"># Audit class distribution across processed labels
+from collections import Counter
+counts = Counter()
+for lbl in label_dir.glob("*.txt"):
+    for line in open(lbl):
+        counts[int(line.split()[0])] += 1
+for cls_id, name in ID_TO_NAME.items():
+    print(f"{name:<20}: {counts.get(cls_id, 0)}")</pre>
+
+        <h3>Root cause</h3>
+        <div class="issue">
+          <strong>Root cause identified:</strong> Image and label mapping was not handled correctly during dataset merging. Some sources nested labels in subdirectories (for example <code>labels/labels/Train</code>) while the merge logic assumed a flat label directory structure. Pigmented BK image-label pairs were being skipped and never copied into the processed dataset.
+        </div>
+
+        <h3>Resolution</h3>
+        <div class="fix">
+          <strong>Fix applied:</strong>
+          <ul>
+            <li>Corrected image–label mapping logic to handle nested label search paths</li>
+            <li>Updated the merge pipeline so pairs are copied together and filename collisions get a source prefix</li>
+            <li>Regenerated the entire processed dataset from scratch</li>
+            <li>Repeated the YOLO-to-COCO conversion with the corrected dataset</li>
+            <li>Verified class distribution again before starting training</li>
+          </ul>
+        </div>
+
+        <h3>Before / after comparison</h3>
+        <div class="beforeafter">
+          <div class="issue">
+            <strong>Before fix</strong>
+            <pre class="code" style="margin:10px 0 0">pigmented_bk : 0 samples</pre>
+          </div>
+          <div class="fix">
+            <strong>After fix</strong>
+            <pre class="code" style="margin:10px 0 0">pigmented_bk : 170 samples</pre>
+          </div>
+        </div>
+
+        <h3>Verified final distribution</h3>
+        <p class="meta">Post-fix class distribution (processed set):</p>
+        <pre class="code">benign        : 176
+malignant     : 181
+ak            : 215
+bcc           : 208
+dermatofibroma: 190
+melanoma      : 188
+nevus         : 196
+pigmented_bk  : 170
+scc           : 191
+vascular      : 215</pre>
+
+        <p class="body">With Pigmented BK correctly included at 170 samples, the dataset was ready for training. This debugging process highlights the importance of thorough dataset validation before model training.</p>
+
+        <div class="placeholder" style="margin-top:16px">
+          <strong>Dataset Distribution Screenshot (After Fix)</strong>
+          <p>Verified class distribution after fixing the Pigmented BK dataset issue — Pigmented BK correctly shows 170 samples</p>
+        </div>
+      </article>
+
+      <article id="challenges" class="chapter" data-phase="CHALLENGES">
+        <h2>Engineering Challenges & Debugging Journey</h2>
+        <h3>The iterative development process</h3>
+        <p class="meta">The project was not built in a single linear pass. Instead, it progressed through multiple stages of development, validation, debugging, and refinement. This section documents the key engineering challenges encountered and how they were resolved.</p>
+
+        <h3>Project evolution timeline</h3>
+        <div class="vflow" aria-label="Engineering journey timeline">
+          <div class="vflow-step">
+            <div class="vflow-ico" aria-hidden="true">1</div>
+            <div>
+              <div class="kicker">PHASE 1</div>
+              <div class="ttl">Initial 2-Class Setup</div>
+              <p>Project began with benign vs malignant classification only. Dataset prepared and initial Faster R-CNN model trained.</p>
+            </div>
+          </div>
+          <div class="vflow-arrow">↓</div>
+          <div class="vflow-step">
+            <div class="vflow-ico" aria-hidden="true">2</div>
+            <div>
+              <div class="kicker">PHASE 2</div>
+              <div class="ttl">First Major Bug: Bounding Box Issue</div>
+              <p>Evaluation revealed that predicted bounding boxes were appearing in approximately the same position across different images, indicating a pipeline problem.</p>
+            </div>
+          </div>
+          <div class="vflow-arrow">↓</div>
+          <div class="vflow-step">
+            <div class="vflow-ico" aria-hidden="true">3</div>
+            <div>
+              <div class="kicker">RESOLUTION</div>
+              <div class="ttl">Debugged & Corrected Localization</div>
+              <p>Traced issue through data/annotation/prediction pipeline, identified root cause, corrected the problem, and reran evaluation.</p>
+            </div>
+          </div>
+          <div class="vflow-arrow">↓</div>
+          <div class="vflow-step">
+            <div class="vflow-ico" aria-hidden="true">4</div>
+            <div>
+              <div class="kicker">PHASE 3</div>
+              <div class="ttl">Expanded to 10 Classes</div>
+              <p>After validating the basic pipeline, project expanded from 2 classes to 10 classes with additional disease categories.</p>
+            </div>
+          </div>
+          <div class="vflow-arrow">↓</div>
+          <div class="vflow-step">
+            <div class="vflow-ico" aria-hidden="true">5</div>
+            <div>
+              <div class="kicker">PHASE 4</div>
+              <div class="ttl">Second Major Bug: Missing Pigmented BK</div>
+              <p>Dataset validation revealed Pigmented BK showed 0 samples in processed dataset despite raw images being present.</p>
+            </div>
+          </div>
+          <div class="vflow-arrow">↓</div>
+          <div class="vflow-step">
+            <div class="vflow-ico" aria-hidden="true">6</div>
+            <div>
+              <div class="kicker">RESOLUTION</div>
+              <div class="ttl">Debugged Dataset Merge Process</div>
+              <p>Fixed image-label mapping and merging process, regenerated dataset, and verified Pigmented BK correctly included.</p>
+            </div>
+          </div>
+          <div class="vflow-arrow">↓</div>
+          <div class="vflow-step">
+            <div class="vflow-ico" aria-hidden="true">7</div>
+            <div>
+              <div class="kicker">FINAL</div>
+              <div class="ttl">Final Training & Evaluation</div>
+              <p>Trained final 10-class model and achieved the reported evaluation metrics.</p>
+            </div>
+          </div>
+        </div>
+
+        <h3>Challenge 1 — Incorrect / Repeated Bounding Box Localization</h3>
+        <h3>The problem</h3>
+        <p class="meta">During evaluation of the initial two-class model (benign vs malignant), a serious localization issue was discovered through visual inspection of predictions.</p>
+
+        <div class="issue">
+          <strong>Issue detected:</strong> Predicted bounding boxes were appearing in approximately the same position across different images, rather than adapting to the actual lesion locations in each image.
+        </div>
+
+        <p class="body">This was a critical finding because it indicated that the issue was not simply a matter of model accuracy — the localization/prediction pipeline itself had a fundamental problem that needed investigation.</p>
+
+        <h3>Investigation and resolution</h3>
+        <p class="body">Instead of continuing with the flawed results, the entire data/annotation/prediction pipeline was investigated to identify why the localization output was incorrect.</p>
+
+        <ul>
+          <li>Traced the issue through the data loading and preprocessing pipeline</li>
+          <li>Examined annotation format and coordinate transformations</li>
+          <li>Checked the prediction output generation and post-processing</li>
+          <li>Identified an issue in the data/annotation/prediction pipeline that was causing the repeated positioning</li>
+          <li>Corrected the underlying issue</li>
+          <li>Reran the necessary processing and evaluation steps</li>
+        </ul>
+
+        <p class="body">After correction, the prediction pipeline was able to produce image-specific localization rather than repeatedly placing the box in the same position. This debugging process was essential because it ensured the detection pipeline was fundamentally sound before expanding to the more complex 10-class problem.</p>
+
+        <div class="placeholder" style="margin-top:16px">
+          <strong>Bounding Box Issue Screenshot</strong>
+          <p>Visual evidence of the repeated bounding box problem across different images</p>
+        </div>
+
+        <div class="placeholder" style="margin-top:16px">
+          <strong>Corrected Localization Screenshot</strong>
+          <p>Prediction results after fixing the bounding box localization issue</p>
+        </div>
+
+        <h3>Challenge 2 — Missing Pigmented BK Samples</h3>
+        <h3>The problem</h3>
+        <p class="meta">After successfully fixing the initial localization issue and expanding from 2 classes to 10 classes, dataset validation revealed another critical issue.</p>
+
+        <div class="issue">
+          <strong>Issue detected:</strong> Pigmented Benign Keratosis (Pigmented BK) was showing 0 samples in the processed dataset, even though the raw images were present in the source dataset.
+        </div>
+
+        <p class="body">This was unexpected because the raw Pigmented BK images and their corresponding label files existed in the source data. The class was disappearing somewhere during the dataset merging and processing pipeline.</p>
+
+        <h3>Investigation process</h3>
+        <p class="meta">A systematic investigation was conducted to trace where the Pigmented BK samples were being lost:</p>
+        <ol>
+          <li>Confirmed raw Pigmented BK images were present on disk</li>
+          <li>Confirmed matching YOLO label files existed for those images</li>
+          <li>Checked image-label file name matching and pairing</li>
+          <li>Examined class ID mapping and remapping logic</li>
+          <li>Traced the dataset merging process and logs</li>
+          <li>Analyzed the resulting class distribution after each processing step</li>
+        </ol>
+
+        <h3>Root cause</h3>
+        <div class="issue">
+          <strong>Root cause identified:</strong> The dataset merging process was not correctly handling the source dataset's label folder structure. Some sources nested labels in subdirectories while the merge logic assumed a flat label directory structure, causing Pigmented BK image-label pairs to be skipped during the merge.
+        </div>
+
+        <h3>Resolution</h3>
+        <div class="fix">
+          <strong>Fix applied:</strong>
+          <ul>
+            <li>Corrected the image-label mapping logic to handle nested label search paths</li>
+            <li>Updated the merge pipeline so pairs are copied together and filename collisions get a source prefix</li>
+            <li>Removed the existing processed dataset</li>
+            <li>Regenerated the entire processed dataset from scratch</li>
+            <li>Repeated the YOLO-to-COCO conversion with the corrected dataset</li>
+            <li>Verified the class distribution again before training</li>
+          </ul>
+        </div>
+
+        <h3>Before / after comparison</h3>
+        <div class="beforeafter">
+          <div class="issue">
+            <strong>Before fix</strong>
+            <pre class="code" style="margin:10px 0 0">pigmented_bk : 0 samples</pre>
+            <p class="body" style="margin:8px 0 0">Investigation: Raw images present → labels checked → mapping checked → merge process checked → issue identified and fixed</p>
+          </div>
+          <div class="fix">
+            <strong>After fix</strong>
+            <pre class="code" style="margin:10px 0 0">pigmented_bk : 170 samples</pre>
+            <p class="body" style="margin:8px 0 0">Dataset regenerated → annotation conversion repeated → class distribution verified → ready for training</p>
+          </div>
+        </div>
+
+        <div class="placeholder" style="margin-top:16px">
+          <strong>Pigmented BK = 0 Screenshot</strong>
+          <p>Evidence of the missing Pigmented BK class before the fix</p>
+        </div>
+
+        <h3>Final verified distribution</h3>
+        <p class="meta">Post-fix class distribution (processed set):</p>
+        <pre class="code">benign        : 176
+malignant     : 181
+ak            : 215
+bcc           : 208
+dermatofibroma: 190
+melanoma      : 188
+nevus         : 196
+pigmented_bk  : 170
+scc           : 191
+vascular      : 215</pre>
+
+        <p class="body">With Pigmented BK correctly included at 170 samples, the dataset was validated and ready for the final training and evaluation workflow. This debugging process highlights the importance of thorough dataset validation at each stage of development.</p>
+
+        <h3>Key engineering insights</h3>
+        <p class="body">These debugging experiences demonstrate that successful machine learning engineering requires:</p>
+        <ul>
+          <li><strong>Validation at each stage</strong> — Not just training, but evaluating whether outputs behave as expected</li>
+          <li><strong>Visual inspection</strong> — Looking at actual predictions can reveal issues that metrics alone might miss</li>
+          <li><strong>Systematic investigation</strong> — Tracing problems through the entire pipeline rather than making assumptions</li>
+          <li><strong>Incremental development</strong> — Starting simple and expanding complexity after validating each component</li>
+        </ul>
+      </article>
+
+      <article id="model" class="chapter" data-phase="MODEL">
+        <h2>Why Faster R-CNN?</h2>
+        <h3>The need for object detection over classification</h3>
+        <p class="meta">The project requires <strong>both</strong> lesion localization and disease classification. A pure image classifier only provides an image-level class — it cannot identify <em>where</em> the lesion is located in the image.</p>
+
+        <div class="issue" style="margin:10px 0 18px">A classifier cannot answer <em>where</em> the lesion is. There is no bounding box to inspect, overlay, or evaluate with localization metrics.</div>
+
+        <h3>Model evolution: from 2-class to 10-class</h3>
+        <p class="body">The Faster R-CNN architecture was first implemented and validated with the initial 2-class setup (benign vs malignant). After establishing that the detection pipeline was working correctly, the model was expanded to handle the full 10-class taxonomy by replacing the classification head.</p>
+
+        <h3>Why object detection was required</h3>
+        <p class="body">Classification only gives an image-level class. This project also needs lesion localization. Therefore Faster R-CNN was used to provide both bounding boxes and class predictions.</p>
+
+        <h3>Why Faster R-CNN specifically?</h3>
+        <table class="spec">
+          <tr>
+            <th>Localization</th>
+            <td>Faster R-CNN is built around region proposals and box regression — every output is a spatial prediction, not a global logit.</td>
+          </tr>
+          <tr>
+            <th>Precision</th>
+            <td>Two-stage detectors produce tighter boxes than single-stage models, which matters for precise lesion boundaries.</td>
+          </tr>
+          <tr>
+            <th>Transfer learning</th>
+            <td>COCO-pretrained ResNet50 backbone gives strong low-level features even when the skin-lesion corpus is modest in size.</td>
+          </tr>
+          <tr>
+            <th>Multi-scale (FPN)</th>
+            <td>Feature Pyramid Network fuses P2–P6 feature maps so small and large lesions are both detectable without resizing tricks.</td>
+          </tr>
+        </table>
+
+        <h3>Chosen model</h3>
+        <p class="body"><strong>Faster R-CNN ResNet50 FPN v2</strong> (<code>fasterrcnn_resnet50_fpn_v2</code>) — COCO-pretrained backbone and RPN, with the classification head replaced for 11 outputs (background + 10 diseases).</p>
+      </article>
+
+      <article id="architecture" class="chapter" data-phase="ARCHITECTURE">
+        <h2>Model Architecture</h2>
+        <h3>Faster R-CNN ResNet50 FPN components</h3>
+        <p class="meta">The model combines several proven components to create an effective object detection system for skin lesions.</p>
+
+        <h3>Architecture overview</h3>
+        <pre class="code">Input Image  (H × W × 3)
+        ↓
+ResNet50 Backbone  →  C2, C3, C4, C5 feature maps
+        ↓
+FPN  →  P2–P6  (multi-scale lateral connections)
+        ↓
+RPN  →  objectness score + Δbox per anchor  (proposals)
+        ↓
+ROI Align  →  7×7 pooled features per proposal
+        ↓
+FC layers  →  class logits + box deltas
+        ↓
+{ box [x1,y1,x2,y2],  label,  score }</pre>
+
+        <h3>Component explanations</h3>
+        <table class="spec">
+          <tr>
+            <th>ResNet50</th>
+            <td>Hierarchical visual features. Pretrained on ImageNet via COCO weights — low-level edges and textures transfer well to dermoscopy.</td>
+          </tr>
+          <tr>
+            <th>FPN</th>
+            <td>Lateral + top-down connections produce P2–P6. Larger feature maps (P2) cover small lesions; P5/P6 cover large ones.</td>
+          </tr>
+          <tr>
+            <th>RPN</th>
+            <td>Slides anchors over every FPN level. Outputs <em>objectness</em> (lesion vs background) and a rough box for each proposal passed to ROI heads.</td>
+          </tr>
+          <tr>
+            <th>ROI Align</th>
+            <td>Bilinear interpolation — avoids the quantisation artefacts of ROI Pooling. Produces fixed 7×7 feature crops per proposal.</td>
+          </tr>
+          <tr>
+            <th>FC predictor</th>
+            <td>Two fully-connected layers output final class scores (11-way softmax) and box regression deltas simultaneously.</td>
+          </tr>
+        </table>
+
+        <h3>Head replacement for 10 classes</h3>
+        <p class="body">The COCO-pretrained classification head is replaced to output 11 classes (background + 10 disease categories):</p>
+        <pre class="code">from torchvision.models.detection import fasterrcnn_resnet50_fpn_v2
+from torchvision.models.detection.faster_rcnn import FastRCNNPredictor
+
+model = fasterrcnn_resnet50_fpn_v2(weights="DEFAULT")
+
+# Replace head: background + 10 lesion classes
+in_features = model.roi_heads.box_predictor.cls_score.in_features
+model.roi_heads.box_predictor = FastRCNNPredictor(in_features, num_classes=11)</pre>
+      </article>
+
+      <article id="training" class="chapter" data-phase="TRAINING">
+        <h2>Training Configuration</h2>
+        <h3>Final training setup</h3>
+        <p class="meta">The model was trained with the following configuration after dataset preparation and debugging were complete.</p>
+
+        <table class="spec">
+          <tr><th>Model</th><td>Faster R-CNN ResNet50 FPN</td></tr>
+          <tr><th>Classes</th><td>10 disease classes + background (11 total)</td></tr>
+          <tr><th>Epochs</th><td>80</td></tr>
+          <tr><th>Batch size</th><td>2</td></tr>
+          <tr><th>Optimizer</th><td>SGD (lr = 0.001, momentum = 0.9, weight_decay = 0.0005)</td></tr>
+          <tr><th>Scheduler</th><td>StepLR (step_size = 25, gamma = 0.1)</td></tr>
+          <tr><th>GPU</th><td>CUDA acceleration, mixed precision when available</td></tr>
+          <tr><th>Checkpoint</th><td>Best checkpoint saved based on validation loss</td></tr>
+        </table>
+
+        <h3>Training workflow</h3>
+        <pre class="code">Dataset Loader
+        ↓
+Forward Pass
+        ↓
+Loss Calculation
+        ↓
+Backpropagation
+        ↓
+Checkpoint Saving</pre>
+
+        <p class="body">The best checkpoint is selected by validation loss and reused for test prediction and COCO evaluation.</p>
+
+        <div class="placeholder" style="margin-top:16px">
+          <strong>Training Completion Screenshot</strong>
+          <p>Final training completion after 80 epochs</p>
+        </div>
+      </article>
+
+      <article id="evaluation" class="chapter" data-phase="EVALUATION">
+        <h2>Evaluation Methodology</h2>
+        <h3>Final performance results</h3>
+        <p class="meta">After training, the detector was evaluated on the unseen test split using COCO evaluation metrics. Predictions were written to <code>prediction_results.json</code> and scored with <code>pycocotools</code>.</p>
+
+        <h3>Final Results</h3>
+        <p class="meta">Test Images: 257</p>
+
+        <table class="spec">
+          <tr><th>mAP@0.5</th><td>60.2%</td></tr>
+          <tr><th>mAP@0.5:0.95</th><td>34.4%</td></tr>
+          <tr><th>mAP@0.75</th><td>33.6%</td></tr>
+          <tr><th>AR@100</th><td>48.6%</td></tr>
+        </table>
+
+        <p class="body"><strong>mAP@0.5:0.95</strong> is stricter because it evaluates across multiple IoU thresholds (from 0.5 to 0.95 in steps of 0.05), requiring precise localization. <strong>mAP@0.5</strong> is more lenient, rewarding predictions when the box overlaps ground truth by at least 0.5 IoU.</p>
+
+        <div class="placeholder" style="margin-top:16px">
+          <strong>Evaluation Metrics Screenshot</strong>
+          <p>Final COCO evaluation metrics on the test dataset</p>
+        </div>
+
+        <h3>Class-wise detection results</h3>
+        <p class="meta">Performance breakdown across individual skin lesion categories on the test set.</p>
+
+        <div class="table-wrap">
+          <table class="results">
+            <thead>
+              <tr>
+                <th>Disease Class</th>
+                <th class="num">Detected Samples</th>
+                <th class="num">Total Samples</th>
+                <th class="num">Recall (%)</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="cls">Benign</td>
+                <td class="num">24</td>
+                <td class="num">27</td>
+                <td class="recall recall-high">88.89%</td>
+              </tr>
+              <tr>
+                <td class="cls">Malignant</td>
+                <td class="num">25</td>
+                <td class="num">27</td>
+                <td class="recall recall-high">92.59%</td>
+              </tr>
+              <tr>
+                <td class="cls">Actinic Keratosis</td>
+                <td class="num">21</td>
+                <td class="num">26</td>
+                <td class="recall recall-mid">80.77%</td>
+              </tr>
+              <tr>
+                <td class="cls">Basal Cell Carcinoma</td>
+                <td class="num">21</td>
+                <td class="num">43</td>
+                <td class="recall recall-low">48.84%</td>
+              </tr>
+              <tr>
+                <td class="cls">Dermatofibroma</td>
+                <td class="num">8</td>
+                <td class="num">13</td>
+                <td class="recall recall-mid">61.54%</td>
+              </tr>
+              <tr>
+                <td class="cls">Melanoma</td>
+                <td class="num">17</td>
+                <td class="num">25</td>
+                <td class="recall recall-mid">68.00%</td>
+              </tr>
+              <tr>
+                <td class="cls">Nevus</td>
+                <td class="num">22</td>
+                <td class="num">27</td>
+                <td class="recall recall-mid">81.48%</td>
+              </tr>
+              <tr>
+                <td class="cls">Pigmented Benign Keratosis</td>
+                <td class="num">23</td>
+                <td class="num">31</td>
+                <td class="recall recall-mid">74.19%</td>
+              </tr>
+              <tr>
+                <td class="cls">Squamous Cell Carcinoma</td>
+                <td class="num">24</td>
+                <td class="num">34</td>
+                <td class="recall recall-mid">70.59%</td>
+              </tr>
+              <tr>
+                <td class="cls">Vascular Lesions</td>
+                <td class="num">23</td>
+                <td class="num">25</td>
+                <td class="recall recall-high">92.00%</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3>Performance observations</h3>
+        <p class="body">The model shows strong detection performance for classes such as Malignant (92.59%), Vascular (92.00%), and Benign (88.89%). Lower performance was observed for Basal Cell Carcinoma (48.84%) and Dermatofibroma (61.54%), indicating the need for additional data balancing and targeted improvements for these categories.</p>
+
+        <p class="eval-note"><strong>Evaluation Method:</strong> Class-wise recall was calculated by comparing predicted detections against ground-truth annotations on the unseen test dataset.</p>
+      </article>
+
+      <article id="prediction" class="chapter" data-phase="PREDICTION">
+        <h2>Prediction / Demo</h2>
+        <h3>Testing on unseen images</h3>
+        <p class="meta">The trained model was tested on unseen skin lesion images to demonstrate its detection capabilities in a realistic inference scenario.</p>
+
+        <h3>Initial binary classification work</h3>
+        <p class="body">When the project first started, work focused on a binary classification problem distinguishing between <strong>benign</strong> and <strong>malignant</strong> lesions only. This initial phase helped establish the detection pipeline before expanding to the full 10-class taxonomy.</p>
+
+        <h3>Prediction output</h3>
+        <p class="body">For each input image, the model outputs:</p>
+        <ul>
+          <li><strong>Predicted lesion class</strong> — one of the 10 disease categories (or benign/malignant in initial work)</li>
+          <li><strong>Confidence score</strong> — model's confidence in the prediction</li>
+          <li><strong>Bounding box</strong> — [x1, y1, x2, y2] coordinates localizing the lesion</li>
+        </ul>
+
+        <pre class="code">Prediction Output:
+{
+  "box": [x1, y1, x2, y2],
+  "label": "disease_class_name",
+  "score": 0.95
+}</pre>
+
+        <h3>Successful predictions</h3>
+        <p class="body">The model successfully localizes lesions with accurate bounding boxes and correct class predictions:</p>
+
+        <div class="screenshot-card">
+          <img src="correct box .png" alt="Correct bounding box prediction" onclick="openImageViewer('correct box .png')" />
+          <div class="caption">Correct bounding box prediction — lesion accurately localized with appropriate confidence score</div>
+        </div>
+
+        <div class="screenshot-card">
+          <img src="result.png" alt="Overall prediction results" onclick="openImageViewer('result.png')" />
+          <div class="caption">Overall prediction results showing multiple detections</div>
+        </div>
+
+        <h3>Prediction challenges</h3>
+        <p class="body">The model sometimes produces incorrect bounding boxes or misclassifications, highlighting areas for improvement:</p>
+
+        <div class="screenshot-card">
+          <img src="wrong box.png" alt="Incorrect bounding box prediction" onclick="openImageViewer('wrong box.png')" />
+          <div class="caption">Incorrect bounding box — box does not accurately capture the lesion region</div>
+        </div>
+
+        <div class="screenshot-card">
+          <img src="wrong box 1 .png" alt="Incorrect bounding box prediction example 1" onclick="openImageViewer('wrong box 1 .png')" />
+          <div class="caption">Incorrect bounding box example — poor localization of the lesion</div>
+        </div>
+
+        <div class="screenshot-card">
+          <img src="wrong box 2.png" alt="Incorrect bounding box prediction example 2" onclick="openImageViewer('wrong box 2.png')" />
+          <div class="caption">Incorrect bounding box example — box misalignment with actual lesion</div>
+        </div>
+
+        <p class="body">These prediction examples show both the strengths and limitations of the current model, providing insights for future improvements in bounding box accuracy and classification precision.</p>
+      </article>
+
+      <article id="challenges" class="chapter" data-phase="CHALLENGES">
+        <h2>Challenges</h2>
+        <h3>Actual challenges encountered during the project</h3>
+        <p class="meta">Several technical challenges were encountered and resolved during the development of this project.</p>
+
+        <h3>Data integration challenges</h3>
+        <ul>
+          <li><strong>Combining datasets with different structures</strong> — Multiple sources had different folder layouts, requiring custom merge logic</li>
+          <li><strong>Different class mappings</strong> — Each source used different class IDs, requiring careful remapping to a unified 10-class space</li>
+          <li><strong>Annotation validation</strong> — Ensuring all annotations followed the correct format and contained valid bounding boxes</li>
+        </ul>
+
+        <h3>Dataset debugging challenges</h3>
+        <ul>
+          <li><strong>Missing Pigmented BK samples</strong> — A critical bug where Pigmented Benign Keratosis samples were being lost during dataset merging</li>
+          <li><strong>Image-label mapping issues</strong> — Nested directory structures in source datasets caused pairs to be skipped</li>
+        </ul>
+
+        <h3>Performance challenges</h3>
+        <ul>
+          <li><strong>Differences in class-wise performance</strong> — Some classes (BCC, Dermatofibroma) showed significantly lower recall than others</li>
+          <li><strong>Dataset imbalance</strong> — Variations in sample sizes across classes may affect model performance</li>
+        </ul>
+      </article>
+
+      <article id="future" class="chapter" data-phase="FUTURE">
+        <h2>Future Improvements</h2>
+        <h3>Areas for future development</h3>
+        <p class="meta">Based on the evaluation results and challenges encountered, several areas have been identified for future improvement.</p>
+
+        <h3>Performance improvements</h3>
+        <ul>
+          <li><strong>Improve lower-performing classes</strong> — Focus on Basal Cell Carcinoma and Dermatofibroma which showed lower recall</li>
+          <li><strong>Investigate dataset balancing</strong> — Address class imbalance through targeted data collection or controlled oversampling</li>
+          <li><strong>Targeted augmentation</strong> — Implement class-aware augmentation (geometric and photometric) without breaking box coordinates</li>
+        </ul>
+
+        <h3>Model optimization</h3>
+        <ul>
+          <li><strong>Hyperparameter tuning</strong> — Explore learning-rate schedules, anchor configurations, and NMS thresholds</li>
+          <li><strong>Additional data for weaker categories</strong> — Collect more samples for underperforming disease categories</li>
+        </ul>
+
+        <h3>Validation and deployment</h3>
+        <ul>
+          <li><strong>External validation</strong> — Test the model on clinical datasets from sources not included in the original merge pipeline</li>
+          <li><strong>Clinical evaluation</strong> — Conduct thorough clinical validation before any production deployment</li>
+        </ul>
+
+        <p class="body">These improvements have not yet been implemented and represent planned future work for the project.</p>
+      </article>
+
+      <article id="conclusion" class="chapter" data-phase="CONCLUSION">
+        <h2>Conclusion</h2>
+        <h3>Project summary</h3>
+        <p class="meta">This project successfully built an end-to-end 10-class skin lesion detection pipeline using Faster R-CNN with ResNet50 FPN backbone.</p>
+
+        <h3>Key achievements</h3>
+        <ul>
+          <li>Built a complete data processing pipeline from heterogeneous raw datasets to unified training format</li>
+          <li>Implemented dataset validation and debugging, including resolution of the missing Pigmented BK class issue</li>
+          <li>Trained a Faster R-CNN ResNet50 FPN model for 10-class skin lesion detection</li>
+          <li>Achieved final mAP@0.5 of 60.2% on the test set</li>
+          <li>Demonstrated prediction capability on unseen images</li>
+        </ul>
+
+        <h3>Final metrics</h3>
+        <table class="spec">
+          <tr><th>Test Images</th><td>257</td></tr>
+          <tr><th>mAP@0.5</th><td>60.2%</td></tr>
+          <tr><th>mAP@0.5:0.95</th><td>34.4%</td></tr>
+          <tr><th>mAP@0.75</th><td>33.6%</td></tr>
+          <tr><th>AR@100</th><td>48.6%</td></tr>
+        </table>
+
+        <h3>Project status</h3>
+        <p class="body">This is a research/prototype project demonstrating the feasibility of multi-class skin lesion detection. It is not clinically validated or production-ready. Clear areas have been identified for future improvement, particularly for lower-performing classes and dataset balancing.</p>
+
+        <h3>Technical summary</h3>
+        <p class="body">The project demonstrates a complete machine learning pipeline: from data collection and preprocessing, through model training and evaluation, to prediction on unseen data. The debugging process for the Pigmented BK issue highlights the importance of thorough dataset validation in machine learning projects.</p>
+      </article>
+    </section>
+
+    <section style="margin-top:8px" id="repro">
+      <h3 style="color:var(--muted);text-transform:uppercase;letter-spacing:.04em;font-size:14px">Reproduce locally</h3>
+      <pre class="code">python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+python src/preprocessing/merge_multiclass_dataset.py
+python src/preprocessing/convert_yolo_to_coco.py
+python scripts/check_distribution.py
+python src/detector/train_detector.py
+python src/detector/evaluate_metrics.py</pre>
+    </section>
+
+  </main>
+
+</body>
+</html>
